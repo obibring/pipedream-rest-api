@@ -1,6 +1,6 @@
 {
   "name": "@bibs/pipedream-rest-client-node",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A PipedreamHQ rest API client",
   "main": "build/index.cjs.js",
   "module": "build/index.esm.js",
