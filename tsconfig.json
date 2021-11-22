@@ -1,0 +1,24 @@
+{
+  "include": ["src", "package.json", "scripts"],
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "strict": true,
+    "declaration": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strictNullChecks": true,
+    "baseUrl": ".",
+    "rootDir": ".",
+    "exactOptionalPropertyTypes": true,
+    "moduleResolution": "node",
+    "emitDeclarationOnly": true,
+    "outFile": "build/index.d.ts"
+  },
+  "ts-node": {
+    "moduleTypes": {
+      "*": "cjs"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "@bibs/pipedream-rest-client-node",
+  "version": "0.0.1",
+  "description": "A PipedreamHQ rest API client",
+  "main": "build/index.cjs.js",
+  "module": "build/index.esm.js",
+  "sideEffects": false,
+  "types": "build/index.d.ts",
+  "scripts": {
+    "clean": "rm -rf build",
+    "build:ts": "node --loader ts-node/esm scripts/build.ts",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:esm": "yarn build:ts esm",
+    "build:cjs": "yarn build:ts cjs",
+    "build": "yarn build:types && yarn build:esm && yarn build:cjs"
+  },
+  "exports": {
+    ".": {}
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/obibring/pipedream-ts-rest-api.git"
+  },
+  "keywords": [
+    "pipedream",
+    "pipedreamhq",
+    "rest",
+    "typescript",
+    "client"
+  ],
+  "author": "Orr Bibring",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/obibring/pipedream-ts-rest-api/issues"
+  },
+  "homepage": "https://github.com/obibring/pipedream-ts-rest-api#readme",
+  "dependencies": {
+    "axios": "^0.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.9",
+    "chalk": "^4.1.2",
+    "esbuild": "^0.13.15",
+    "ts-node": "10.4.0",
+    "ts-toolbelt": "^9.6.0",
+    "typescript": "4.5.x"
+  }
+}

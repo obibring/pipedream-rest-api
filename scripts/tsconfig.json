@@ -1,0 +1,12 @@
+{
+  "include": ["package.json", "*.ts"],
+  "compilerOptions": {
+    "module": "es2020",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "rootDir": "../",
+    "baseUrl": ".",
+    "noEmit": true
+  }
+}

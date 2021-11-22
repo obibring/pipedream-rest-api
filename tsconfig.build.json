@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src"],
+  "compilerOptions": {
+    "module": "es2020",
+    "target": "es2020",
+    "baseUrl": "./src",
+    "rootDir": "./src"
+  }
+}
