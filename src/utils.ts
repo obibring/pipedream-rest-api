@@ -1,9 +1,12 @@
-import type {
-  Endpoints,
-  OptionalResponseBody,
-  EndpointArgs,
-  EndpointDefinition
-} from "./types";
+import type { EndpointArgs, EndpointDefinition } from "./types";
+import { readFileSync } from "fs";
+
+export function isObj(t: unknown): t is Record<string, any> {
+  return t != null && typeof t === "object";
+}
+export function isStr(t: unknown): t is string {
+  return typeof t === "string";
+}
 
 export function toRestApiUrl(
   baseUrl: string,
@@ -33,3 +36,16 @@ export type TArgs<T extends Def> = EndpointArgs<T>;
 export type FactoryParam<RouteParams> =
   | string[]
   | ((routeParams: RouteParams) => [...route_parts: string[]]);
+
+export const parseConfigLineValue = (
+  line: string
+): { key: string; value: string } => {
+  const [key, value] = line.split("=").map((s) => s.trim());
+  return { key, value };
+};
+
+export const readLinesFromFile = (path: string) =>
+  readFileSync(path, { encoding: "utf-8" })
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "");

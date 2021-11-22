@@ -1,43 +1,74 @@
 import type { AxiosPromise } from "axios";
 import axios from "axios";
-import { toRestApiUrl, stringy } from "./utils";
+import { isStr, toRestApiUrl, stringy, isObj } from "./utils";
 import type { TArgs, Def, FactoryParam } from "./utils";
 import type { Endpoints, OptionalResponseBody } from "./types";
+import type {
+  ProfileConfig,
+  ParsedPipedreamConfig
+} from "./types/parses-config";
 
 const DEFAULT_BASE_URL = "https://api.pipedream.com/v1";
 
 /**
  * @see https://pipedream.com/docs/api/rest
  */
-class PipedreamRestClient<
-  Options extends {
-    /**
-     * The Rest API's base url.
-     * @see https://pipedream.com/docs/api/rest/#base-url
-     */
-    basesUrl?: string;
-    /**
-     * An Optional profile name for debugging
-     */
-    profile?: string;
-  }
-> {
-  public readonly apiKey: string;
+class PipedreamRestClient {
+  private readonly defaultApiKey: string;
   public readonly baseUrl: string;
-  public readonly profile: Options["profile"];
+  private _profiles: Record<string, ProfileConfig> = {};
+  private _activeProfile: string | null = null;
 
-  constructor(apiKey: string, options?: Options) {
-    if (typeof apiKey !== "string" || apiKey.trim() === "") {
+  constructor(config: ParsedPipedreamConfig, baseUrl?: string);
+  constructor(
+    apiKey: string,
+    profiles?: undefined | Record<string, ProfileConfig>,
+    baseUrl?: string
+  );
+  constructor(
+    a: ParsedPipedreamConfig | string,
+    b: Record<string, ProfileConfig> | string | undefined
+  ) {
+    const apiKey = isObj(a) ? a.api_key : a;
+    const profiles = isObj(a) ? a.profiles ?? {} : b ?? {};
+    const baseUrl = (isObj(a) ? b : arguments[2]) ?? DEFAULT_BASE_URL;
+    if (!isStr(apiKey) || apiKey.trim() === "") {
       throw new Error(`Pipedream: invalid api key ${stringy(apiKey)}`);
     }
-    const baseUrl = options?.basesUrl ?? DEFAULT_BASE_URL;
-    if (typeof baseUrl !== "string" || baseUrl.trim() === "") {
+    if (!isStr(baseUrl) || baseUrl.trim() === "") {
       throw new Error(`Pipedream: invalid base url ${stringy(baseUrl)}`);
     }
-    this.profile = options?.profile;
-    this.apiKey = apiKey;
+    this._profiles = isObj(profiles) ? profiles : {};
+    this.defaultApiKey = apiKey;
     this.baseUrl = baseUrl.replace(/\/$/, "");
   }
+
+  public as(profile: string | null): this {
+    if (typeof profile === "string") {
+      const api_key = this._profiles[profile]?.api_key;
+      if (!api_key) {
+        throw new Error(`No api key set for profile ${profile}.`);
+      }
+      this._activeProfile = profile;
+    } else {
+      this._activeProfile = null;
+    }
+    return this;
+  }
+
+  public get activeProfile(): string | null {
+    return this._activeProfile;
+  }
+
+  public get profiles(): string[] {
+    return Object.keys(this._profiles);
+  }
+
+  private get apiKey() {
+    const profile = this.activeProfile;
+    return profile ? this._profiles[profile].api_key : this.defaultApiKey;
+  }
+
   /**
    * @see https://pipedream.com/docs/api/rest/#required-headers
    */

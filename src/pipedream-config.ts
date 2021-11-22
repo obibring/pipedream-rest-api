@@ -1,93 +1,56 @@
-import { resolve, join } from "path";
-import { existsSync, readFileSync } from "fs";
+import { join } from "path";
+import { existsSync } from "fs";
+import type { ParsedPipedreamConfig } from "./types/parses-config";
+import { parseConfigLineValue, readLinesFromFile } from "./utils";
 
-const DEFAULT_PIPEDREAM_PATH = join(".config", "pipedream", "config");
+const DEFAULT_PIPEDREAM_PATH = process.env.XDG_CONFIG_HOME
+  ? join(process.env.XDG_CONFIG_HOME, "pipedream")
+  : join(process.env.HOME ?? "", ".config", "pipedream", "config");
+const HEADING_REGEXP = new RegExp(`^\\[(.+)\\]`);
 
 /**
- * Extracts the api key from the Pipedream config file, optionally
- * for a specific profile.
+ * Parses a pipedream config object into a JS object. Profiles
+ * are parsed into the `profiles` property, and all other
+ * properties are added onto the
+ * @returns
  */
-export function readApiKey(
-  profile: string,
-  customConfigPath?: string
-): { api_key: string; org_id: string };
-export function readApiKey(
-  profile: undefined,
-  customConfigPath?: string
-): { api_key: string; org_id: undefined };
-export function readApiKey(): { api_key: string; org_id: undefined };
-export function readApiKey(profile?: string, customConfigPath?: string) {
-  if (typeof profile === "string" && profile.trim() === "") {
-    console.warn(`Received an empty profile string. Using default api_key.`);
-  }
-  const home = process.env.HOME as string;
-  if (!customConfigPath && !home) {
-    throw new Error(
-      `process.env.HOME is not set and a customConfigPath was not provided.`
-    );
-  }
-  const configPath =
-    customConfigPath ?? resolve(join(home, DEFAULT_PIPEDREAM_PATH));
-  if (!existsSync(configPath)) {
+export function parseConfig(
+  path: string = DEFAULT_PIPEDREAM_PATH
+): ParsedPipedreamConfig {
+  if (!existsSync(path)) {
     throw new Error(
       `Could not find pipedream config file` +
-        `at path ${configPath}. Pass a customConfigPath to resolve the issue.`
+        `at path ${path}. Pass a customConfigPath to resolve the issue.`
     );
   }
-  const lines = readFileSync(configPath, { encoding: "utf-8" })
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line !== "");
-  console.log("\n\n", lines.join("\n"), "\n\n");
-  const api_key_regexp = /api_key\s*=\s*[a-zA-Z0-9]+/;
-  const org_id_key_regexp = /org_id\s*=\s*[a-zA-Z0-9_]+/;
-  const getProfileRegex = (name?: string) =>
-    new RegExp(`\\[${name ?? ".+"}\\]`);
-  const parseConfigValue = (line: string): string => {
-    const [_, api_key] = line.split("=").map((s) => s.trim());
-    return api_key;
+  const lines = readLinesFromFile(path);
+  const conf: Record<string, any> = {
+    api_key: null,
+    profiles: {}
   };
-  const anyProfileStartRegex = getProfileRegex();
-  if (typeof profile === "string" && profile !== "") {
-    const targetProfileRegex = getProfileRegex(profile);
-    let inProfileScope = false;
-    let [api_key, org_id] = [undefined, undefined] as [
-      string | undefined,
-      string | undefined
-    ];
-    for (const line of lines) {
-      if (!inProfileScope && !targetProfileRegex.test(line)) {
-        continue;
+  let currentProfile: string | undefined = undefined;
+  const getProfileData = (profile: string) => {
+    let data = conf.profiles[profile] || {};
+    conf.profiles[profile] = data;
+    return data;
+  };
+  for (const line of lines) {
+    if (HEADING_REGEXP.test(line)) {
+      const profileName = line.match(HEADING_REGEXP);
+      if (profileName) {
+        const profile = profileName[1];
+        currentProfile = profile;
       }
-      if (targetProfileRegex.test(line)) {
-        inProfileScope = true;
-        continue;
-      } else if (inProfileScope && anyProfileStartRegex.test(line)) {
-        inProfileScope = false;
-        continue;
-      }
-      if (api_key_regexp.test(line)) {
-        api_key = parseConfigValue(line);
-      } else if (org_id_key_regexp.test(line)) {
-        org_id = parseConfigValue(line);
-      }
-      if (api_key && org_id) {
-        return { api_key, org_id };
-      }
+      continue;
     }
-  } else {
-    const anyProfileRegex = getProfileRegex();
-    let skip = false;
-    for (const line of lines) {
-      if (anyProfileRegex.test(line)) {
-        skip = true;
-      }
-      if (!skip && api_key_regexp.test(line)) {
-        return { api_key: parseConfigValue(line), org_id: undefined };
-      }
+    if (line.includes("=")) {
+      const { key, value } = parseConfigLineValue(line);
+      let data = currentProfile ? getProfileData(currentProfile) : conf;
+      data[key] = value;
     }
   }
-  throw new Error(
-    `Could not find piepdream api key.` + `Config file:\n\n` + lines.join("\n")
-  );
+  if (typeof conf.api_key !== "string") {
+    throw new Error(`Could not parse top level api_key from ${path}.`);
+  }
+  return conf as ParsedPipedreamConfig;
 }

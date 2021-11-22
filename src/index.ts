@@ -1,3 +1,3 @@
 export { default as PipedreamRestClient } from "./PipedreamRestClient";
 export * from "./types";
-export { readApiKey } from "./pipedream-config";
+export { parseConfig } from "./pipedream-config";
