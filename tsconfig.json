@@ -5,6 +5,8 @@
     "module": "commonjs",
     "strict": true,
     "declaration": true,
+    "lib": ["es2018"],
+    "isolatedModules": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
@@ -14,7 +16,7 @@
     "exactOptionalPropertyTypes": true,
     "moduleResolution": "node",
     "emitDeclarationOnly": true,
-    "outFile": "build/index.d.ts"
+    "outDir": "build"
   },
   "ts-node": {
     "moduleTypes": {
